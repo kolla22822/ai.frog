@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой ИИ от kolla22822</title>
+    <title>Мой безлимитный ИИ (Ollama)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -86,17 +86,19 @@
     <div class="chat-container">
         <div class="messages" id="messages">
             <div class="message bot">
-                <div class="bubble">🚀 Привет! Я DeepSeek на твоём сайте. Спрашивай что угодно!</div>
+                <div class="bubble">🧠 Безлимитный DeepSeek-R1 на Ollama! Задай любой вопрос.</div>
             </div>
         </div>
         <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Напиши мне что-нибудь..." autofocus />
+            <input type="text" id="messageInput" placeholder="Пиши что хочешь..." autofocus />
             <button class="btn" id="sendBtn">➤</button>
         </div>
     </div>
 
     <script>
-        const API_KEY = 'sk-d5cae860033f4878b8cabeb55a33d394';
+        // Адрес Ollama (локальный)
+        const OLLAMA_URL = 'http://localhost:11434/api/chat';
+        const MODEL = 'deepseek-r1:8b'; // Если скачал другую модель, поменяй здесь
 
         const messagesDiv = document.getElementById('messages');
         const input = document.getElementById('messageInput');
@@ -113,37 +115,32 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        async function sendToDeepSeek(userMessage) {
-            const url = 'https://api.deepseek.com/chat/completions';
-            
+        async function sendToOllama(userMessage) {
             const requestBody = {
-                model: 'deepseek-chat',
+                model: MODEL,
                 messages: [
                     { role: 'user', content: userMessage }
-                ]
+                ],
+                stream: false // можно включить поток, но для простоты отключим
             };
 
             try {
-                const response = await fetch(url, {
+                const response = await fetch(OLLAMA_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
-                
-                if (data.choices && data.choices.length > 0) {
-                    return data.choices[0].message.content;
+                if (data.message && data.message.content) {
+                    return data.message.content;
                 } else if (data.error) {
-                    return '⚠️ Ошибка API: ' + data.error.message;
+                    return 'Ошибка Ollama: ' + data.error;
                 } else {
-                    return '❓ Бот получил непонятный ответ...';
+                    return 'Пустой ответ от модели...';
                 }
             } catch (error) {
-                return '❌ Ошибка соединения: ' + error.message;
+                return 'Не могу подключиться к Ollama. Убедись, что она запущена!';
             }
         }
 
@@ -162,7 +159,7 @@
             messagesDiv.appendChild(loadingMsg);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-            const reply = await sendToDeepSeek(text);
+            const reply = await sendToOllama(text);
             loadingMsg.remove();
             addMessage('bot', reply);
 
@@ -177,4 +174,4 @@
         });
     </script>
 </body>
-</html>Ь
+</html>
