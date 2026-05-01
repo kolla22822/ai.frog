@@ -1,11 +1,181 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой ИИ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой ИИ от kolla22822</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .chat-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .messages {
+            height: 450px;
+            padding: 20px;
+            overflow-y: auto;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .user { align-items: flex-end; }
+        .bot { align-items: flex-start; }
+        .bubble {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 22px;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        .user .bubble { background: #0a84ff; color: white; }
+        .input-area {
+            display: flex;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        #messageInput {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 25px;
+            outline: none;
+            font-size: 15px;
+        }
+        #messageInput::placeholder { color: rgba(255,255,255,0.6); }
+        .btn {
+            background: #0a84ff;
+            border: none;
+            color: white;
+            padding: 10px 22px;
+            margin-left: 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #005bbf; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
 </head>
 <body>
-    <h1>Мой сайт работает! 🚀</h1>
-    <p>Скоро здесь будет настоящий ИИ-помощник.</p>
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="message bot">
+                <div class="bubble">🚀 Привет! Я DeepSeek на твоём сайте. Спрашивай что угодно!</div>
+            </div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Напиши мне что-нибудь..." autofocus />
+            <button class="btn" id="sendBtn">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // Твой ключ API DeepSeek
+        const API_KEY = 'sk-d5cae860033f4878b8cabeb55a33d394';
+
+        const messagesDiv = document.getElementById('messages');
+        const input = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function addMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + role;
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.textContent = text;
+            msgDiv.appendChild(bubble);
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function sendToDeepSeek(userMessage) {
+            const url = 'https://api.deepseek.com/chat/completions';
+            
+            const requestBody = {
+                model: 'deepseek-chat',
+                messages: [
+                    { role: 'user', content: userMessage }
+                ]
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+                
+                if (data.choices && data.choices.length > 0) {
+                    return data.choices[0].message.content;
+                } else if (data.error) {
+                    return '⚠️ Ошибка API: ' + data.error.message;
+                } else {
+                    return '❓ Бот получил непонятный ответ...';
+                }
+            } catch (error) {
+                return '❌ Ошибка соединения: ' + error.message;
+            }
+        }
+
+        async function handleSend() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage('user', text);
+            input.value = '';
+            sendBtn.disabled = true;
+            input.disabled = true;
+
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'message bot';
+            loadingMsg.innerHTML = '<div class="bubble">⏳ Думаю...</div>';
+            messagesDiv.appendChild(loadingMsg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            const reply = await sendToDeepSeek(text);
+            loadingMsg.remove();
+            addMessage('bot', reply);
+
+            sendBtn.disabled = false;
+            input.disabled = false;
+            input.focus();
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+    </script>
 </body>
 </html>
